@@ -1,125 +1,131 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowRight, BookOpen, CheckCircle2, Clock3, FileText, GraduationCap, LayoutDashboard, ListChecks, Menu, Route, ShieldCheck, Sparkles, Target, X } from 'lucide-react';
-import { curriculum, allLessons } from './data/curriculum.js';
+import { ArrowRight, BookOpen, Check, ChevronRight, Clock, Compass, FileText, Flame, GraduationCap, Layers, Menu, Play, ShieldCheck, Sparkles, Target, X } from 'lucide-react';
+import { course, lessons } from './data/course.js';
 import { syllabus } from './data/syllabus.js';
 import './styles.css';
 
-const lessons = allLessons();
-const nav = [
-  ['dashboard', 'Dashboard'],
-  ['courses', 'Courses'],
-  ['lesson', 'Lesson'],
-  ['syllabus', 'Syllabus'],
-  ['mocks', 'Mock Tests']
-];
-
 function App() {
-  const [view, setView] = useState('dashboard');
-  const [menu, setMenu] = useState(false);
-  const [activeTrackId, setActiveTrackId] = useState(curriculum[0].id);
-  const [activeLessonId, setActiveLessonId] = useState(lessons[0].id);
+  const [view, setView] = useState('learn');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [trackId, setTrackId] = useState(course.tracks[0].id);
+  const [lessonId, setLessonId] = useState(lessons[0].id);
   const [answers, setAnswers] = useState({});
-  const activeTrack = curriculum.find(t => t.id === activeTrackId) || curriculum[0];
-  const activeLesson = lessons.find(l => l.id === activeLessonId) || lessons[0];
-  const answered = Object.keys(answers).length;
-  const correct = Object.values(answers).filter(Boolean).length;
+  const activeTrack = course.tracks.find(t => t.id === trackId) || course.tracks[0];
+  const activeLesson = lessons.find(l => l.id === lessonId) || lessons[0];
+  const selected = answers[activeLesson.id];
+  const solved = selected !== undefined;
+  const correctCount = Object.values(answers).filter(Boolean).length;
+  const progress = Math.round((Object.keys(answers).length / lessons.length) * 100);
 
-  function openLesson(trackId, lessonId) {
-    setActiveTrackId(trackId);
-    setActiveLessonId(lessonId);
+  function openLesson(nextTrackId, nextLessonId) {
+    setTrackId(nextTrackId);
+    setLessonId(nextLessonId);
     setView('lesson');
+    setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function go(next) {
-    setView(next);
-    setMenu(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  function nextLesson() {
+    const idx = lessons.findIndex(l => l.id === activeLesson.id);
+    const next = lessons[(idx + 1) % lessons.length];
+    openLesson(next.track.id, next.id);
   }
 
-  return <main className="appFrame">
-    <header className="topbar">
-      <button className="brand" onClick={() => go('dashboard')}><span>R</span><strong>RPSC English</strong></button>
-      <button className="menuButton" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button>
-      <nav className={menu ? 'navMenu open' : 'navMenu'}>{nav.map(([id, label]) => <button key={id} className={view === id ? 'active' : ''} onClick={() => go(id)}>{label}</button>)}</nav>
-    </header>
+  return <main className="shell">
+    <aside className="side">
+      <button className="brand" onClick={() => setView('learn')}><span>R</span><b>RPSC English</b></button>
+      <button className="hamb" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button>
+      <nav className={menuOpen ? 'nav open' : 'nav'}>
+        <NavButton active={view === 'learn'} icon={<Compass />} onClick={() => setView('learn')}>Learn</NavButton>
+        <NavButton active={view === 'lesson'} icon={<Play />} onClick={() => setView('lesson')}>Lesson</NavButton>
+        <NavButton active={view === 'syllabus'} icon={<FileText />} onClick={() => setView('syllabus')}>Syllabus</NavButton>
+        <NavButton active={view === 'mocks'} icon={<Target />} onClick={() => setView('mocks')}>Mocks</NavButton>
+      </nav>
+      <div className="sideStat"><span>Progress</span><strong>{progress}%</strong><i><em style={{ width: `${progress}%` }} /></i></div>
+    </aside>
 
-    {view === 'dashboard' && <Dashboard openLesson={openLesson} correct={correct} answered={answered} />}
-    {view === 'courses' && <Courses activeTrackId={activeTrackId} setActiveTrackId={setActiveTrackId} openLesson={openLesson} />}
-    {view === 'lesson' && <LessonPlayer lesson={activeLesson} answers={answers} setAnswers={setAnswers} openLesson={openLesson} />}
-    {view === 'syllabus' && <Syllabus />}
-    {view === 'mocks' && <Mocks go={go} />}
+    <section className="stage">
+      {view === 'learn' && <Learn activeTrack={activeTrack} setTrackId={setTrackId} openLesson={openLesson} correctCount={correctCount} />}
+      {view === 'lesson' && <Lesson lesson={activeLesson} selected={selected} setAnswers={setAnswers} answers={answers} nextLesson={nextLesson} solved={solved} />}
+      {view === 'syllabus' && <Syllabus />}
+      {view === 'mocks' && <Mocks />}
+    </section>
   </main>;
 }
 
-function Dashboard({ openLesson, correct, answered }) {
+function NavButton({ active, icon, children, onClick }) {
+  return <button className={active ? 'navBtn active' : 'navBtn'} onClick={onClick}>{icon}<span>{children}</span></button>;
+}
+
+function Learn({ activeTrack, setTrackId, openLesson, correctCount }) {
   return <>
-    <section className="heroGrid">
-      <div className="heroPanel">
-        <div className="eyebrow"><Sparkles size={16} /> Challenge-first preparation</div>
-        <h1>Study RPSC Lecturer English through guided lessons and MCQ challenges.</h1>
-        <p>Pick a course path, solve a small challenge, read the explanation, and move to the next concept. Built for syllabus coverage and negative-marking discipline.</p>
-        <div className="heroActions"><button className="primaryBtn" onClick={() => openLesson('grammar', 'articles-determiners')}>Start first challenge <ArrowRight size={18} /></button><button className="ghostBtn" onClick={() => document.querySelector('#course-map')?.scrollIntoView({ behavior: 'smooth' })}>View course map</button></div>
+    <section className="hero">
+      <div>
+        <div className="eyebrow"><Sparkles size={16} /> Interactive course</div>
+        <h1>Master the RPSC English syllabus one challenge at a time.</h1>
+        <p>Choose a track, unlock short lessons, answer exam-style questions, and learn from explanations immediately.</p>
+        <div className="heroActions"><button className="primary" onClick={() => openLesson('grammar', 'articles')}>Start now <ArrowRight /></button><button className="secondary" onClick={() => document.querySelector('#map')?.scrollIntoView({ behavior: 'smooth' })}>See course map</button></div>
       </div>
-      <div className="dailyCard">
-        <span className="cardLabel">Today’s challenge</span>
-        <h2>Choose the correct article</h2>
-        <p>He is ___ honest man.</p>
-        <div className="pillOptions"><span>a</span><span className="right">an</span><span>the</span></div>
-        <div className="explainLine"><CheckCircle2 size={18} /> Answer first. Explanation second.</div>
+      <div className="focusCard">
+        <span>Today’s focus</span>
+        <h2>Articles are signals</h2>
+        <p>___ Ganga is a sacred river.</p>
+        <div className="miniAnswers"><b>A</b><b>An</b><b className="ok">The</b></div>
+        <small><Check size={16} /> Explanation unlocks after answer</small>
       </div>
     </section>
-    <section className="metricGrid">
-      <Metric icon={<Target />} label="Exam pattern" value="150 MCQs" />
-      <Metric icon={<Clock3 />} label="Duration" value="3 hours" />
-      <Metric icon={<ShieldCheck />} label="Negative marking" value="1/3" />
-      <Metric icon={<CheckCircle2 />} label="Session score" value={`${correct}/${answered || 0}`} />
+
+    <section className="stats">
+      <Stat icon={<Target />} label="Questions" value={course.exam.questions} />
+      <Stat icon={<GraduationCap />} label="Marks" value={course.exam.marks} />
+      <Stat icon={<Clock />} label="Duration" value={course.exam.duration} />
+      <Stat icon={<ShieldCheck />} label="Correct here" value={correctCount} />
     </section>
-    <section id="course-map" className="sectionBlock"><SectionTitle icon={<Route />} kicker="Course map" title="Choose a path and start solving." /><CourseMap openLesson={openLesson} /></section>
+
+    <section id="map" className="panel">
+      <Header kicker="Course map" title="Pick a track. Follow the lesson path." text="The course is arranged into tracks, units and short challenge lessons." />
+      <div className="trackTabs">{course.tracks.map(track => <button key={track.id} className={track.id === activeTrack.id ? `tab active ${track.color}` : 'tab'} onClick={() => setTrackId(track.id)}><span>{track.label}</span>{track.title}</button>)}</div>
+      <div className="mapLayout">
+        <article className={`trackIntro ${activeTrack.color}`}><span>{activeTrack.label}</span><h2>{activeTrack.title}</h2><p>{activeTrack.outcome}</p></article>
+        <div className="unitStack">{activeTrack.units.map(unit => <Unit key={unit.id} track={activeTrack} unit={unit} openLesson={openLesson} />)}</div>
+      </div>
+    </section>
   </>;
 }
 
-function Courses({ activeTrackId, setActiveTrackId, openLesson }) {
-  const active = curriculum.find(t => t.id === activeTrackId) || curriculum[0];
-  return <section className="workspace twoColumn">
-    <aside className="rail"><span className="cardLabel">Courses</span>{curriculum.map(track => <button key={track.id} className={track.id === activeTrackId ? 'railItem active' : 'railItem'} onClick={() => setActiveTrackId(track.id)}><strong>{track.title}</strong><small>{track.subtitle}</small></button>)}</aside>
-    <div className="mainCard"><span className={`trackBadge ${active.accent}`}>{active.subtitle}</span><h1>{active.title}</h1><p className="mutedText">{active.promise}</p>{active.units.map(unit => <Unit key={unit.id} track={active} unit={unit} openLesson={openLesson} />)}</div>
-  </section>;
-}
-
-function CourseMap({ openLesson }) {
-  return <div className="courseGrid">{curriculum.map(track => <article className="courseCard" key={track.id}><span className={`trackBadge ${track.accent}`}>{track.subtitle}</span><h3>{track.title}</h3><p>{track.promise}</p>{track.units.map(unit => <div key={unit.id} className="miniUnit"><strong>{unit.title}</strong>{unit.lessons.slice(0, 2).map(lesson => <button key={lesson.id} onClick={() => openLesson(track.id, lesson.id)}>{lesson.title}<ArrowRight size={15} /></button>)}</div>)}</article>)}</div>;
-}
-
 function Unit({ track, unit, openLesson }) {
-  return <div className="unitBlock"><div><h2>{unit.title}</h2><p>{unit.summary}</p></div><div className="lessonPath">{unit.lessons.map((lesson, index) => <button key={lesson.id} className="lessonNode" onClick={() => openLesson(track.id, lesson.id)}><span>{index + 1}</span><div><strong>{lesson.title}</strong><small>{lesson.minutes} min · {lesson.difficulty}</small></div></button>)}</div></div>;
+  return <div className="unit"><div className="unitHead"><Layers /><div><h3>{unit.title}</h3><p>{unit.lessons.length} lessons</p></div></div><div className="nodes">{unit.lessons.map((lesson, index) => <button key={lesson.id} className="node" onClick={() => openLesson(track.id, lesson.id)}><i>{index + 1}</i><div><strong>{lesson.title}</strong><small>{lesson.type} · {lesson.minutes} min</small></div><ChevronRight /></button>)}</div></div>;
 }
 
-function LessonPlayer({ lesson, answers, setAnswers, openLesson }) {
-  const key = lesson.id;
-  const selected = answers[key];
-  const choiceMade = selected !== undefined;
+function Lesson({ lesson, selected, answers, setAnswers, nextLesson, solved }) {
   const isCorrect = selected === true;
-  const track = curriculum.find(t => t.id === lesson.trackId) || curriculum[0];
-  const next = lessons[(lessons.findIndex(l => l.id === lesson.id) + 1) % lessons.length];
-  return <section className="workspace lessonLayout">
-    <aside className="rail lessonRail"><span className="cardLabel">Lesson path</span><strong>{lesson.trackTitle}</strong><small>{lesson.unitTitle}</small><div className="stepList"><span className="done">Concept</span><span className="active">Challenge</span><span>Explanation</span><span>Next</span></div></aside>
-    <article className="mainCard lessonCard"><span className={`trackBadge ${track.accent}`}>{lesson.difficulty} · {lesson.minutes} min</span><h1>{lesson.title}</h1><p className="objective">Goal: {lesson.objective}</p><div className="conceptGrid"><Info title="Concept" text={lesson.concept} /><Info title="Example" text={lesson.example} /><Info title="Common trap" text={lesson.trap} /></div><div className="challengeBox"><span className="cardLabel">Try it</span><h2>{lesson.challenge.prompt}</h2><div className="answerGrid">{lesson.challenge.options.map((option, index) => <button key={option} className={choiceMade ? index === lesson.challenge.correct ? 'correct' : 'dim' : ''} onClick={() => setAnswers({ ...answers, [key]: index === lesson.challenge.correct })}>{option}</button>)}</div>{choiceMade && <div className={isCorrect ? 'feedback good' : 'feedback bad'}><strong>{isCorrect ? 'Correct.' : 'Not quite.'}</strong><p>{lesson.challenge.explanation}</p></div>}</div><button className="primaryBtn nextBtn" onClick={() => openLesson(next.trackId, next.id)}>Next lesson <ArrowRight size={18} /></button></article>
+  return <section className="lessonScreen">
+    <div className="lessonTop"><span className={`badge ${lesson.track.color}`}>{lesson.track.title}</span><span>{lesson.minutes} min</span></div>
+    <div className="lessonGrid">
+      <aside className="lessonRail"><BookOpen /><h2>{lesson.title}</h2><p>{lesson.objective}</p><div className="railSteps"><b>1 Concept</b><b>2 Example</b><b className="hot">3 Challenge</b><b>4 Explain</b></div></aside>
+      <article className="challenge">
+        <span className="eyebrow">Learn</span>
+        <h1>{lesson.setup}</h1>
+        <div className="cards3"><Mini title="Key idea" text={lesson.insight} /><Mini title="Example" text={lesson.example} /><Mini title="Trap" text={lesson.trap} /></div>
+        <div className="question"><span><Flame size={16} /> Challenge</span><h2>{lesson.question}</h2><div className="choices">{lesson.options.map((option, index) => <button key={option} className={solved ? index === lesson.answer ? 'right' : 'fade' : ''} onClick={() => setAnswers({ ...answers, [lesson.id]: index === lesson.answer })}>{option}</button>)}</div>{solved && <div className={isCorrect ? 'result good' : 'result wrong'}><strong>{isCorrect ? 'Correct.' : 'Not quite.'}</strong><p>{lesson.explanation}</p></div>}</div>
+        <button className="primary next" onClick={nextLesson}>Continue <ArrowRight /></button>
+      </article>
+    </div>
   </section>;
 }
 
 function Syllabus() {
-  return <section className="sectionBlock"><SectionTitle icon={<ListChecks />} kicker="Syllabus" title="Full coverage map" /><div className="syllabusGrid">{syllabus.map(part => <article className="syllabusCard" key={part.id}><span className="cardLabel">{part.part}</span><h2>{part.title}</h2><p>{part.weightHint}</p><details><summary>{part.topics.length} topics</summary><ul>{part.topics.map(topic => <li key={topic}>{topic}</li>)}</ul></details></article>)}</div></section>;
+  return <section className="panel"><Header kicker="Syllabus" title="Everything mapped in one place." text="Use this as the coverage checklist while lessons expand." /><div className="syllabusGrid">{syllabus.map(part => <article className="syllabus" key={part.id}><span>{part.part}</span><h2>{part.title}</h2><p>{part.weightHint}</p><details><summary>{part.topics.length} topics</summary><ul>{part.topics.map(topic => <li key={topic}>{topic}</li>)}</ul></details></article>)}</div></section>;
 }
 
-function Mocks({ go }) {
-  return <section className="sectionBlock"><SectionTitle icon={<FileText />} kicker="Mock tests" title="Practice under exam conditions." /><div className="courseGrid"><Mock title="Diagnostic Mini Mock" meta="25 questions · 30 min" /><Mock title="Grammar Section Test" meta="40 questions · 45 min" /><Mock title="Full Mock Test 1" meta="150 questions · 3 hours" /></div><button className="primaryBtn" onClick={() => go('lesson')}>Prepare with lessons first</button></section>;
+function Mocks() {
+  return <section className="panel"><Header kicker="Mock tests" title="Exam simulation comes after lesson foundations." text="The mock engine will use the same challenge system with timing, scoring and explanations." /><div className="mockGrid"><Mock title="Diagnostic Mini Mock" meta="25 questions · 30 min" /><Mock title="Grammar Section Test" meta="40 questions · 45 min" /><Mock title="Full Mock Test" meta="150 questions · 3 hours" /></div></section>;
 }
 
-function Mock({ title, meta }) { return <article className="courseCard"><span className="cardLabel">Coming soon</span><h3>{title}</h3><p>{meta}</p><p>Will include scoring, explanations and negative marking estimate.</p></article>; }
-function Info({ title, text }) { return <div className="infoCard"><span className="cardLabel">{title}</span><p>{text}</p></div>; }
-function Metric({ icon, label, value }) { return <div className="metricCard">{icon}<span>{label}</span><strong>{value}</strong></div>; }
-function SectionTitle({ icon, kicker, title }) { return <div className="sectionTitle">{icon}<span>{kicker}</span><h2>{title}</h2></div>; }
+function Header({ kicker, title, text }) { return <div className="sectionHeader"><span>{kicker}</span><h1>{title}</h1><p>{text}</p></div>; }
+function Stat({ icon, label, value }) { return <div className="stat">{icon}<span>{label}</span><b>{value}</b></div>; }
+function Mini({ title, text }) { return <div className="mini"><span>{title}</span><p>{text}</p></div>; }
+function Mock({ title, meta }) { return <article className="mock"><span>Coming soon</span><h2>{title}</h2><p>{meta}</p></article>; }
 
 createRoot(document.getElementById('root')).render(<App />);
