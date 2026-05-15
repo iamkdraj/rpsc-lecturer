@@ -51,6 +51,25 @@ export const lessons = [
     ]
   },
   {
+    id: 'shakespeare-sonnet-130',
+    title: "Shakespeare's Sonnet 130: Love, Truth, and Anti-Petrarchan Satire",
+    track: 'Literature',
+    difficulty: 'Graduation',
+    minutes: 18,
+    principle: 'Read the poem as argument, not decoration. Every image serves a purpose.',
+    concept: "Sonnet 130 subverts the Petrarchan love tradition. Instead of comparing his mistress to idealised beauties (sun, coral, snow, roses), Shakespeare denies each cliché — then argues that true love needs no false comparison. The volta at line 13 ('And yet, by heaven...') flips the apparent insults into a sincere love claim.",
+    example: "Lines 1–2: 'My mistress' eyes are nothing like the sun; / Coral is far more red than her lips' red.' The speaker rejects stock similes, grounding love in reality rather than exaggeration.",
+    misconception: 'The poem is NOT an insult to the mistress. The final couplet reveals that rejecting false comparisons IS the compliment — rare, honest love is more valuable than poetic lies.',
+    prompt: 'Why does Shakespeare spend 12 lines listing what his mistress is NOT, only to reverse in the couplet?',
+    answer: 'The structure mirrors the argument: by stripping away false Petrarchan comparisons, Shakespeare proves his love is genuine and rare — not performative.',
+    quiz: [
+      { q: "Sonnet 130 is best described as:", options: ['A Petrarchan idealisation of beauty','An anti-Petrarchan satire on false praise','A political allegory','A religious meditation'], correct: 1, why: 'The poem deliberately rejects Petrarchan conventions of exaggerated beauty.' },
+      { q: "The volta (turn) in Sonnet 130 occurs at:", options: ['Line 1','Line 9','Line 13 ("And yet, by heaven...")','Line 14'], correct: 2, why: 'The final couplet beginning at line 13 reverses the poem\'s apparent negativity into a sincere love declaration.' },
+      { q: "The rhyme scheme of a Shakespearean sonnet is:", options: ['ABBA ABBA CDE CDE','ABAB BCBC CDCD EE','ABAB CDCD EFEF GG','AABB CCDD EEFF GG'], correct: 2, why: 'Shakespearean (English) sonnets use three quatrains (ABAB CDCD EFEF) and a closing couplet (GG).' },
+      { q: "Which literary device dominates the comparisons in lines 1–12?", options: ['Hyperbole rejecting hyperbole','Metaphysical conceit','Onomatopoeia','Synecdoche'], correct: 0, why: 'Shakespeare uses the structure of hyperbolic comparison only to deny each one — anti-hyperbole as argument.' }
+    ]
+  },
+  {
     id: 'advance-organizer',
     title: 'Advance Organizer Model: Give the mind a hook',
     track: 'Pedagogy',
